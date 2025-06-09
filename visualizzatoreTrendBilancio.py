@@ -8,14 +8,15 @@ pi = math.pi
 import matplotlib.pyplot as plt
 
 #cambia cartella
-percorsoPrincipaleProgramma = "C:/Users/e.merlo/Desktop/PROGETTI/AAA - ROGNE QUOTIDIANE/CAZZI BILANCI"
+percorsoPrincipaleProgramma = "C:/Users/Edoardo/Desktop" #FISSO
+percorsoPrincipaleProgramma = "C:/Users/edoar/Desktop" #PORTATILE
 os.chdir(percorsoPrincipaleProgramma)
 
 #         INDICE ANALITICO PROGRAMMA:
 # 1.  DEFINZIONE FUNZIONI
 # 2.  DEFINIZIONE VARIABILI PRINCIPALI
 # 3.  INIZIO SCRIPT
-# 4.  PRINTERIA
+# 4.  GRAFICHERIA E PRINTERIA
 # 4.  COMANDI LOGICAMENTE IN FONDO AL CODICE
 
 ### 1. DEFINIZIONE FUNZIONI
@@ -27,15 +28,20 @@ def clearTerminal():
 # crea vettore normale di numeri ma mette zeri invece di NaN nelle varie posizioni
 def creaVettoreNumerico(vettoreDaPulire):
     vettoreRisultato = []
+
     for i in range(len(vettoreDaPulire)):
         numeroDaTestare = vettoreDaPulire[i]
-        if math.isnan(numeroDaTestare):
+        if (math.isnan(numeroDaTestare)) & (len(vettoreRisultato) == 0):
             vettoreRisultato.append(0)
+        elif (math.isnan(numeroDaTestare)):
+            vettoreRisultato.append(vettoreRisultato[-1])
         else:
             vettoreRisultato.append(numeroDaTestare)
     return vettoreRisultato
 
-
+#converti data in formato leggibile dalla libreria pandas
+def convertiData2americano(vettoreDate, nomeColonnaDate):
+    return pd.to_datetime(vettoreDate[nomeColonnaDate], format="%d/%m/%Y", errors='coerce').tolist()
 
 ### 2. DEFINIZIONE VARIABILI PRINCIPALI
 
@@ -52,7 +58,7 @@ percentualeEntrataSuTotale = []
 clearTerminal()
 
 #leggi file .ods e importa le varie caselle, usa specialmente il motore custom per il formato odf
-nomePercorsoFileBilancio = str("S2 - 2023.ods")
+nomePercorsoFileBilancio = str("TREND_SPESE_TOTALI.ods")
 dataIngresso = pd.read_excel(nomePercorsoFileBilancio, index_col=None, engine="odf", header= None, sheet_name = "Foglio1", skiprows= 3, usecols = "A") 
 motivoIngresso = pd.read_excel(nomePercorsoFileBilancio, index_col=None, engine="odf", header= None, sheet_name = "Foglio1", skiprows= 3, usecols = "B")
 colonnaEntrate = pd.read_excel(nomePercorsoFileBilancio, index_col=None, engine="odf", header= None, sheet_name = "Foglio1", skiprows= 3, usecols = "C")
@@ -61,47 +67,40 @@ colonnaTotale = pd.read_excel(nomePercorsoFileBilancio, index_col=None, engine="
 
 #elimina le prime 3 colonne del vettore, che hanno solo instestazione, spazio e formattaione
 
-
-# print(colonnaEntrate)
-# print(colonnaUscite)
-# print(colonnaTotale)
-
 # trasforma tutti i vettori in float per sicurezza (non so in che formato li sta leggendo)
-colonnaEntrate_float = list(map(float, colonnaEntrate))
-colonnaUscite_float = list(map(float, colonnaUscite))
-colonnaTotale_float = list(map(float, colonnaTotale))
+nomeColonnaEntrate = colonnaEntrate.columns[0]
+nomeColonnaUscite = colonnaUscite.columns[0]
+nomeColonnaTotale = colonnaTotale.columns[0]
 
-print('\n')
-print(colonnaEntrate_float)
-
-
-
-colonnaEntrateSenzaNan = creaVettoreNumerico(colonnaEntrate)
-colonnaTotaleSenzaNan = creaVettoreNumerico(colonnaEntrate)
-print('\n')
-print('\n')
-print('\n')
-print('PRIMA VERSIONE')
-print(colonnaTotale)
-print('\n')
-print(len(colonnaEntrateSenzaNan))
-print(len(colonnaTotaleSenzaNan))
-
-for p in range(len(colonnaEntrateSenzaNan)):
-    percentualeEntrataSuTotale.append((colonnaEntrateSenzaNan[p])/(colonnaTotaleSenzaNan[p]))
-
-#print(percentualeEntrataSuTotale)
+colonnaEntrate_float = colonnaEntrate[nomeColonnaEntrate].astype(float).tolist()
+colonnaUscite_float = colonnaUscite[nomeColonnaUscite].astype(float).tolist()
+colonnaTotale_float = colonnaTotale[nomeColonnaTotale].astype(float).tolist()
 
 
-### 4.  PRINTERIA
+# fai sparire tutti in nan e metti un valore costante identico al precedente se li trovi
+colonnaEntrateSenzaNan = creaVettoreNumerico(colonnaEntrate_float)
+colonnaUsciteSenzaNan = creaVettoreNumerico(colonnaUscite_float)
+colonnaTotaleSenzaNan = creaVettoreNumerico(colonnaTotale_float)
 
-plt.plot(dataIngresso, colonnaTotale, color='black', linewidth=2, label='TREND TOTALE SPESE')
+#sistema la data, pandas le legge in americano
+nomeColonnaDate = dataIngresso.columns[0]
+dataIngressoConvertita = convertiData2americano(dataIngresso, nomeColonnaDate)
+dataIngressoMaSoloDataOh =  [stocazzo.date() for stocazzo in dataIngressoConvertita]
+ristocazzo = pd.to_datetime(dataIngressoMaSoloDataOh)
 
 
+### 4. GRAFICHERIA E PRINTERIA 
+plt.plot(ristocazzo, colonnaTotaleSenzaNan, color='black', linewidth=2, label='TREND TOTALE SPESE')
+plt.plot(ristocazzo, colonnaEntrateSenzaNan, color='blue', linewidth=1, label='TREND TOTALE SPESE')
+plt.plot(ristocazzo, colonnaUsciteSenzaNan, color='red', linewidth=1, label='TREND TOTALE SPESE')
+plt.grid()
+
+# test pulizia date
+#plt.plot(ristocazzo)
 
 
 
-### 4.  COMANDI LOGICAMENTE IN FONDO AL CODICE
+### 5.  COMANDI LOGICAMENTE IN FONDO AL CODICE
 
-#plt.show()
+plt.show()
 
